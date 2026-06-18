@@ -1,69 +1,101 @@
-# Sagarawat Price-List Maker (Price-list Formatter)
+# Price List Maker
 
-A premium, client-side web application designed to parse BUSY accounting CSV exports and compile them into beautiful, print-ready A4 PDF price lists. Optimized for high performance, maximum paper efficiency, and professional layout standards.
-
----
-
-## 🌟 Key Features
-
-1. **Robust Right-to-Left CSV Parsing**:
-   - Built a custom right-to-left line parser that resolves unescaped quote anomalies in BUSY CSV exports (e.g. product names ending with quotes like `AIR VENT 4"` or `AXIAL FAN 6"`). 
-   - Prevents rows from merging, ensuring **100% price/rate accuracy** and importing all 3,380+ items successfully.
-
-2. **Interactive Search & Pagination**:
-   - Instant search filters for thousands of products with keyword highlighting.
-   - High-performance visual pagination (50 items per page) for desktop grid preview.
-
-3. **Dynamic Table of Contents (TOC)**:
-   - Centered, structured **INDEX / TABLE OF CONTENTS** page at the beginning of the PDF.
-   - Alternating zebra-striped rows (`#f8fafc`) with compact heights matching the grid.
-   - Fully **clickable bookmarks**—click any category or page number in the index to instantly jump to that section in the PDF reader.
-
-4. **Maximum Print Density & Efficiency**:
-   - Reduced table row padding to `4pt` top/bottom to maximize items per page (up to **40 items per page**).
-   - Removed footers to let tables flow all the way to the bottom margin.
-   - Relocated page numbers (`PAGE X OF Y`) to repeating headers (top-right), suppressed on the cover page.
-
-5. **Locked Branding & Auto-loaded Assets**:
-   - Company Name (`Sagarawat Electricals`), document title (`Price List`), and office address are locked to default production values.
-   - Auto-loads company logo [SELogo.jpg](file:///C:/Users/Adish/Documents/Price-List%20Maker/public/SELogo.jpg) on startup.
-   - Embeds premium **Space Grotesk** TrueType fonts locally from the server directly into pdfMake's virtual file system (`vfs`) for offline compatibility.
-
-6. **Date-Stamped Downloads**:
-   - PDF exports automatically generate filenames appended with the current date (e.g., `Sagarawat_Electricals_PriceList-18-june-2026.pdf`).
+A sophisticated client-side web application for generating professional, print-ready PDF price lists from CSV data. This tool is engineered for businesses requiring robust data parsing, advanced formatting, and high-density document generation.
 
 ---
 
-## 📁 File Structure
+## Overview
 
-- [index.html](file:///C:/Users/Adish/Documents/Price-List%20Maker/index.html) - Structural framework, sidebar preferences, preview workspace, and dependencies.
-- [style.css](file:///C:/Users/Adish/Documents/Price-List%20Maker/style.css) - Premium CSS variables, dark/light layouts, transitions, and switch designs.
-- [app.js](file:///C:/Users/Adish/Documents/Price-List%20Maker/app.js) - JavaScript engine managing CSV parsing, filters, dynamic font loading, and pdfMake compile layouts.
-- [public/](file:///C:/Users/Adish/Documents/Price-List%20Maker/public) - Contains static assets copied to build target:
-  - `favicon.svg` - Brand minimal favicon.
-  - `SELogo.jpg` - Default company logo.
-  - `SpaceGrotesk-Regular.ttf` & `SpaceGrotesk-Bold.ttf` - Local fonts.
-- [dist/](file:///C:/Users/Adish/Documents/Price-List%20Maker/dist) - Compiled production bundle.
+Price List Maker streamlines the conversion of accounting software exports into polished, publication-ready price documents. The platform combines intelligent CSV parsing with professional PDF generation to eliminate manual formatting and ensure data integrity across thousands of items.
 
 ---
 
-## 🚀 How to Run & Build
+## Core Features
 
-### Development Mode
-Runs a local dev server with hot-reloading:
-1. Install dependencies:
+### 1. Advanced CSV Parsing Engine
+- **Custom Right-to-Left Parser**: Handles edge cases common in accounting software exports, including unescaped quotation marks in product names (e.g., `AIR VENT 4"`, `AXIAL FAN 6"`).
+- **Data Integrity**: Prevents row corruption and ensures 100% accuracy of pricing and product information across large datasets (tested with 3,380+ items).
+
+### 2. Interactive Preview & Search
+- **Real-Time Search**: Instant filtering across thousands of products with keyword highlighting.
+- **Visual Pagination**: Grid-based preview with 50 items per page for efficient review on desktop.
+
+### 3. Dynamic Table of Contents
+- **Structured Index**: Professionally formatted table of contents page with alternating row styling.
+- **Interactive Navigation**: Fully clickable PDF bookmarks enabling direct navigation to categories and sections.
+
+### 4. Optimized Print Layout
+- **Maximum Print Density**: Compact row spacing (4pt vertical padding) accommodates up to 40 items per page.
+- **Professional Headers**: Repeating page headers with automatic page numbering (`PAGE X OF Y`).
+- **Clean Footers**: Eliminated footers to maximize usable space.
+
+### 5. Branded Document Management
+- **Locked Branding**: Company name, document title, and office address are secured to production defaults.
+- **Asset Management**: Auto-loads company branding on startup.
+- **Local Font Embedding**: Space Grotesk TrueType fonts are embedded directly, ensuring offline compatibility and consistent rendering across all platforms.
+
+### 6. Automated File Naming
+- **Date-Stamped Exports**: PDF downloads automatically include the generation date in the filename (e.g., `Sagarawat_Electricals_PriceList-18-june-2026.pdf`).
+
+---
+
+## Project Structure
+
+```
+Price-List-Maker/
+├── index.html           # Application structure and dependencies
+├── style.css            # Design system with CSS variables, theme support, and animations
+├── app.js               # Core application logic (CSV parsing, PDF generation, data processing)
+├── public/              # Static assets
+│   ├── favicon.svg      # Brand icon
+│   ├── SELogo.jpg       # Company logo
+│   ├── SpaceGrotesk-Regular.ttf
+│   └── SpaceGrotesk-Bold.ttf
+└── dist/                # Production build output
+```
+
+---
+
+## Installation & Usage
+
+### Development
+
+1. **Install Dependencies**
    ```bash
    npm install
    ```
-2. Start the dev server:
+
+2. **Start Development Server**
    ```bash
    npm run dev
    ```
-3. Open the link displayed in the terminal (typically `http://localhost:5173`).
+   The application will open automatically at `http://localhost:5173` with hot-reload enabled.
 
 ### Production Build
-Builds optimized, compressed static files to the `dist/` directory, ready to be hosted on any static hosting server (like GitHub Pages, Netlify, or Apache/Nginx):
+
+Generate optimized, production-ready files:
+
 ```bash
 npm run build
 ```
-The compiled output in the `dist` folder includes the hashed Javascript, styling files, favicon, logo, and embedded fonts in a self-contained layout.
+
+Output is compiled to the `dist/` directory with:
+- Minified and hashed JavaScript and CSS
+- Embedded assets (fonts, favicon, logo)
+- Ready for deployment on any static hosting platform (GitHub Pages, Netlify, Vercel, etc.)
+
+---
+
+## Technology Stack
+
+- **Frontend**: Vanilla JavaScript
+- **PDF Generation**: pdfMake
+- **Build Tool**: Vite
+- **Styling**: CSS3 with CSS Variables
+- **Browser Compatibility**: Modern browsers (Chrome, Firefox, Safari, Edge)
+
+---
+
+## License
+
+All rights reserved. For inquiries, please contact the project maintainer.
