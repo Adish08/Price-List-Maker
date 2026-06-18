@@ -789,6 +789,7 @@ tr.category-row td {
 .col-num {
     text-align: right;
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
 .col-center {
