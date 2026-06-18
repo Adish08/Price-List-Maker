@@ -247,29 +247,79 @@ function handleCSVFile(file) {
     const reader = new FileReader();
     reader.onload = function(e) {
         parseCSVText(e.target.result);
-        showToast(`Parsed ${file.name} successfully!`, 'success');
     };
     reader.readAsText(file);
 }
 
-// Core parsing algorithm
+// Helper to clean double quotes in product names
+function cleanQuotes(str) {
+    if (!str) return '';
+    let val = str.trim();
+    
+    // Strip leading quote if it exists
+    if (val.startsWith('"')) {
+        val = val.substring(1);
+    }
+    // Strip trailing quote if it exists
+    if (val.endsWith('"')) {
+        val = val.substring(0, val.length - 1);
+    }
+    
+    // Replace any remaining consecutive double quotes with a single double quote
+    val = val.replace(/"+/g, '"');
+    
+    return val.trim();
+}
+
+// Core parsing algorithm (Robust line-by-line parser)
 function parseCSVText(csvText) {
-    Papa.parse(csvText, {
-        skipEmptyLines: true,
-        complete: function(results) {
-            if (!results.data || results.data.length === 0) {
-                showToast('Empty or invalid CSV file.', 'danger');
-                return;
+    try {
+        const lines = csvText.split(/\r?\n/);
+        const data = [];
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            
+            const parts = [];
+            let remaining = line;
+            
+            // Extract the last 5 columns from the right-hand side
+            for (let k = 0; k < 5; k++) {
+                const lastCommaIdx = remaining.lastIndexOf(',');
+                if (lastCommaIdx === -1) {
+                    break;
+                }
+                const field = remaining.substring(lastCommaIdx + 1).trim();
+                parts.unshift(field);
+                remaining = remaining.substring(0, lastCommaIdx);
             }
             
-            rawCSVData = results.data;
-            processDataModel(results.data);
-        },
-        error: function(err) {
-            console.error('Csv parse error:', err);
-            showToast('Failed to parse CSV.', 'danger');
+            // The remaining part is the first field (Product Name)
+            const nameField = remaining.trim();
+            parts.unshift(nameField);
+            
+            // Clean up quotes in the product name
+            parts[0] = cleanQuotes(parts[0]);
+            
+            if (parts.length >= 2) {
+                data.push(parts);
+            }
         }
-    });
+        
+        if (data.length === 0) {
+            showToast('Empty or invalid CSV file.', 'danger');
+            return;
+        }
+        
+        rawCSVData = data;
+        processDataModel(data);
+        showToast('Parsed CSV file successfully!', 'success');
+        
+    } catch (err) {
+        console.error('Csv parse error:', err);
+        showToast('Failed to parse CSV.', 'danger');
+    }
 }
 
 // Process rows to construct a structured Data model
