@@ -970,7 +970,7 @@ function exportPriceListPDF() {
                 margin: [pageMargins[0], 15, pageMargins[2], 0],
                 columns: [
                     { text: parsedData.companyName, style: 'miniHeader', alignment: 'left' },
-                    { text: `Page ${currentPage} of ${pageCount}`, style: 'miniHeader', alignment: 'right' }
+                    { text: `Page ${currentPage} of ${pageCount}`, style: 'miniHeader', alignment: 'right', color: '#000000' }
                 ],
                 canvas: [
                     {
@@ -1069,7 +1069,7 @@ function exportPriceListPDF() {
             miniHeader: {
                 font: useFont,
                 fontSize: 8,
-                color: '#94a3b8'
+                color: '#000000'
             },
             footerText: {
                 fontSize: 7.5,
@@ -1211,5 +1211,4 @@ async function loadSpaceGroteskFonts() {
         console.warn('Could not pre-load Space Grotesk fonts:', e);
     }
 }
-
 
