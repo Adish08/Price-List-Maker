@@ -8,7 +8,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- CSS Stylesheet -->
     <link rel="stylesheet" href="style.css">
@@ -34,26 +34,19 @@
                 </div>
                 <div>
                     <h2>PriceList Maker</h2>
-                    <span class="version">v1.0.0</span>
                 </div>
             </div>
             
             <div class="sidebar-content">
                 <!-- PDF Metadata Settings -->
                 <section class="config-section">
-                    <h3><i data-lucide="building-2"></i> Company Info</h3>
-                    <div class="form-group">
-                        <label for="company-name">Company Name</label>
-                        <input type="text" id="company-name" placeholder="Sagarawat Electricals" value="Sagarawat Electricals">
-                    </div>
+                    <h3><i data-lucide="sliders-horizontal"></i> Options / Customization</h3>
+                    <input type="hidden" id="company-name" value="Sagarawat Electricals">
                     <div class="form-group">
                         <label for="doc-title">Document Title</label>
                         <input type="text" id="doc-title" placeholder="Price List" value="Wholesale Price List">
                     </div>
-                    <div class="form-group">
-                        <label for="company-address">Subtitle / Address</label>
-                        <textarea id="company-address" placeholder="Address, GSTIN, Email, Contact details..."></textarea>
-                    </div>
+                    <input type="hidden" id="company-address" value="25-26, Dr. Bhabha Marg, Near Private Bus Stand&#10;Neemuch (M.P.) - 07423-220808">
                     <div class="form-group">
                         <label for="logo-upload" class="custom-file-upload">
                             <i data-lucide="image"></i> Upload Logo
@@ -72,23 +65,14 @@
                     
 
                     
-                    <div class="form-group">
-                        <label for="currency-symbol">Currency Symbol</label>
-                        <select id="currency-symbol">
-                            <option value="₹">Rupees (₹)</option>
-                            <option value="$">Dollars ($)</option>
-                            <option value="€">Euros (€)</option>
-                            <option value="£">Pounds (£)</option>
-                            <option value="">None</option>
-                        </select>
-                    </div>
+                    <input type="hidden" id="currency-symbol" value="₹">
 
                     <div class="form-group toggle-group">
                         <label for="group-by-category">
                             <span>Group by Category</span>
                             <small class="help-text">Group items by Parent Group</small>
                         </label>
-                        <input type="checkbox" id="group-by-category" class="ios-switch" checked>
+                        <input type="checkbox" id="group-by-category" class="ios-switch">
                     </div>
 
                     <div class="form-group toggle-group">
@@ -134,15 +118,16 @@
             <!-- Header Bar -->
             <header class="top-bar">
                 <div class="title-section">
-                    <h1>A4 Price List Creator</h1>
-                    <p class="subtitle">Convert Sagarawat Electricals CSV exports into professional print PDFs</p>
+                    <h1>Price-list Formatter</h1>
+                    <p class="subtitle">Convert CSV output from BUSY's list of items to printable PDF</p>
                 </div>
                 <div class="action-section">
-                    <button id="btn-load-default" class="btn-secondary" title="Load local SE_ListofItems.csv">
-                        <i data-lucide="refresh-cw"></i> Load Default CSV
+                    <button id="btn-theme-toggle" class="btn-secondary" style="padding: 10px;" title="Toggle Light/Dark Theme">
+                        <i data-lucide="moon" id="theme-toggle-icon"></i>
                     </button>
+
                     <button id="btn-generate-pdf" class="btn-primary disabled" disabled>
-                        <i data-lucide="printer"></i> Export A4 PDF
+                        <i data-lucide="printer"></i> Export PDF
                     </button>
                 </div>
             </header>
@@ -245,20 +230,7 @@
     <!-- Notification Toast System -->
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- Progress Modal (PDF Generation) -->
-    <div id="progress-modal" class="modal-overlay hidden">
-        <div class="modal-card">
-            <div class="spinner-container">
-                <div class="spinner"></div>
-                <div class="spinner-core"><i data-lucide="file-text"></i></div>
-            </div>
-            <h3 id="progress-status-title">Generating Price List</h3>
-            <p id="progress-status-desc">Parsing items & arranging columns...</p>
-            <div class="progress-bar-container">
-                <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Application Script -->
     <script src="app.js"></script>

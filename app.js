@@ -7,7 +7,7 @@ const config = {
     themeColor: '#ff6600',      // Primary theme color (Vibrant Orange)
     themeLight: '#fff5eb',      // Accent category row background (Soft Orange Tint)
     currency: '₹',             // Default currency symbol
-    groupByCategory: true,     // Default grouping by parent group
+    groupByCategory: false,    // Default grouping by parent group (OFF by default)
     altRows: true,             // Shaded row background
     margins: 'compact',        // Page margins spacing
     showDiscount: true,        // Toggle discount columns
@@ -23,6 +23,7 @@ const rowsPerPage = 50; // Performance-friendly visual pagination
 
 // Initialize Application UI
 document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
     initLucideIcons();
     setupEventListeners();
 });
@@ -41,7 +42,6 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 function setupEventListeners() {
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('csv-file-input');
-    const loadDefaultBtn = document.getElementById('btn-load-default');
     const generatePdfBtn = document.getElementById('btn-generate-pdf');
     const searchInput = document.getElementById('search-input');
     const clearSearchBtn = document.getElementById('clear-search');
@@ -95,13 +95,13 @@ function setupEventListeners() {
         }
     });
 
-    // Theme selection is hardcoded to brand orange (#ff6600)
+    // Theme toggle button click listener
+    const themeToggleBtn = document.getElementById('btn-theme-toggle');
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', toggleTheme);
+    }
 
-    // Configuration Toggles & Dropdowns
-    currencySelect.addEventListener('change', (e) => {
-        config.currency = e.target.value;
-        if (parsedData) updateDataView();
-    });
+    // Currency selector is hidden input and defaults to Rupees (₹)
 
     groupByCategoryToggle.addEventListener('change', (e) => {
         config.groupByCategory = e.target.checked;
@@ -139,10 +139,7 @@ function setupEventListeners() {
         applyFilters('');
     });
 
-    // Load Local/Default CSV
-    loadDefaultBtn.addEventListener('click', () => {
-        loadDefaultCSV();
-    });
+    // Load Local/Default CSV removed
 
     // Export PDF
     generatePdfBtn.addEventListener('click', () => {
@@ -231,51 +228,9 @@ function showToast(message, type = 'info') {
     }, 4000);
 }
 
-// Show PDF Generation Modal
-function showProgressModal(title, percent) {
-    const modal = document.getElementById('progress-modal');
-    modal.classList.remove('hidden');
-    document.getElementById('progress-status-title').innerText = title;
-    document.getElementById('progress-status-desc').innerText = `Preparing output... ${percent}%`;
-    document.getElementById('progress-bar-fill').style.width = `${percent}%`;
-}
+// Progress modal handlers removed
 
-function updateProgressModal(title, percent) {
-    document.getElementById('progress-status-title').innerText = title;
-    document.getElementById('progress-status-desc').innerText = `Rendering pages... ${percent}%`;
-    document.getElementById('progress-bar-fill').style.width = `${percent}%`;
-}
-
-function hideProgressModal() {
-    document.getElementById('progress-modal').classList.add('hidden');
-}
-
-// Handle Local/Default CSV loading (fetch from same directory)
-function loadDefaultCSV() {
-    const loadBtn = document.getElementById('btn-load-default');
-    loadBtn.classList.add('loading');
-    loadBtn.disabled = true;
-
-    fetch('SE_ListofItems.csv')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Local CSV file not found.');
-            }
-            return response.text();
-        })
-        .then(csvText => {
-            parseCSVText(csvText);
-            loadBtn.classList.remove('loading');
-            loadBtn.disabled = false;
-            showToast('Default Sagarawat CSV loaded successfully!', 'success');
-        })
-        .catch(err => {
-            console.warn(err);
-            loadBtn.classList.remove('loading');
-            loadBtn.disabled = false;
-            showToast('Could not load SE_ListofItems.csv. Please drag & drop or select it manually.', 'danger');
-        });
-}
+// Handle default loading removed
 
 // Parse selected file using FileReader
 function handleCSVFile(file) {
@@ -624,19 +579,12 @@ function formatCurrency(amount) {
 // -------------------------------------------------------------
 // Core PDF Export Logic using pdfmake
 // -------------------------------------------------------------
-async function exportPriceListPDF() {
-    showProgressModal('Compiling Price List', 10);
-    await delay(200);
-
+function exportPriceListPDF() {
     const itemsToExport = [...filteredItems];
     if (itemsToExport.length === 0) {
         showToast('No filtered items to export.', 'danger');
-        hideProgressModal();
         return;
     }
-
-    showProgressModal('Structuring A4 Document Grid', 40);
-    await delay(200);
 
     // Margins logic mapping (compact, normal, wide)
     let pageMargins = [30, 50, 30, 50]; // default normal
@@ -675,69 +623,56 @@ async function exportPriceListPDF() {
     let lastCategory = null;
     let itemCount = 0;
     
-    // Split operations into small chunks using timeout to prevent UI freezes
-    const chunkSize = 250;
-    for (let i = 0; i < itemsToExport.length; i += chunkSize) {
-        const chunk = itemsToExport.slice(i, i + chunkSize);
+    itemsToExport.forEach(item => {
+        // Add Category Section Span Row if grouping enabled
+        if (config.groupByCategory && item.group !== lastCategory) {
+            lastCategory = item.group;
+            
+            const spanColumns = config.showDiscount ? 5 : 3;
+            const catSpanRow = [];
+            
+            // colSpan cell
+            catSpanRow.push({ 
+                text: item.group.toUpperCase(), 
+                colSpan: spanColumns, 
+                style: 'categorySpanHeader',
+                fillColor: config.themeLight
+            });
+            
+            // Empty cells required to satisfy colspan size in pdfmake
+            for (let c = 1; c < spanColumns; c++) {
+                catSpanRow.push({});
+            }
+            tableBody.push(catSpanRow);
+        }
+
+        // Regular items cells formatting
+        const itemRow = [];
+        itemRow.push({ text: item.name, style: 'cellText', alignment: 'left' });
         
-        chunk.forEach(item => {
-            // Add Category Section Span Row if grouping enabled
-            if (config.groupByCategory && item.group !== lastCategory) {
-                lastCategory = item.group;
-                
-                const spanColumns = config.showDiscount ? 5 : 3;
-                const catSpanRow = [];
-                
-                // colSpan cell
-                catSpanRow.push({ 
-                    text: item.group.toUpperCase(), 
-                    colSpan: spanColumns, 
-                    style: 'categorySpanHeader',
-                    fillColor: config.themeLight
-                });
-                
-                // Empty cells required to satisfy colspan size in pdfmake
-                for (let c = 1; c < spanColumns; c++) {
-                    catSpanRow.push({});
+        if (!config.showDiscount) {
+            itemRow.push({ text: item.unit, style: 'cellText', alignment: 'center' });
+            itemRow.push({ text: item.price.toFixed(2), style: 'cellPrice', alignment: 'right' });
+        } else {
+            const discText = item.disc > 0 ? `${item.disc}%` : '-';
+            itemRow.push({ text: item.unit, style: 'cellText', alignment: 'center' });
+            itemRow.push({ text: item.price.toFixed(2), style: 'cellPrice', alignment: 'right' });
+            itemRow.push({ text: discText, style: 'cellPrice', alignment: 'right' });
+            itemRow.push({ text: item.nett.toFixed(2), style: 'cellNett', alignment: 'right' });
+        }
+        
+        // Add item background shading if active
+        if (config.altRows && itemCount % 2 === 0) {
+            itemRow.forEach(cell => {
+                if (Object.keys(cell).length > 0) {
+                    cell.fillColor = '#f8fafc';
                 }
-                tableBody.push(catSpanRow);
-            }
-
-            // Regular items cells formatting
-            const itemRow = [];
-            itemRow.push({ text: item.name, style: 'cellText', alignment: 'left' });
-            
-            if (!config.showDiscount) {
-                itemRow.push({ text: item.unit, style: 'cellText', alignment: 'center' });
-                itemRow.push({ text: item.price.toFixed(2), style: 'cellPrice', alignment: 'right' });
-            } else {
-                const discText = item.disc > 0 ? `${item.disc}%` : '-';
-                itemRow.push({ text: item.unit, style: 'cellText', alignment: 'center' });
-                itemRow.push({ text: item.price.toFixed(2), style: 'cellPrice', alignment: 'right' });
-                itemRow.push({ text: discText, style: 'cellPrice', alignment: 'right' });
-                itemRow.push({ text: item.nett.toFixed(2), style: 'cellNett', alignment: 'right' });
-            }
-            
-            // Add item background shading if active
-            if (config.altRows && itemCount % 2 === 0) {
-                itemRow.forEach(cell => {
-                    if (Object.keys(cell).length > 0) {
-                        cell.fillColor = '#f8fafc';
-                    }
-                });
-            }
-            
-            tableBody.push(itemRow);
-            itemCount++;
-        });
-
-        const percent = Math.floor(40 + (i / itemsToExport.length) * 40);
-        updateProgressModal('Formatting Row Nodes', percent);
-        await delay(30);
-    }
-
-    updateProgressModal('Compiling PDF Output Layout', 90);
-    await delay(100);
+            });
+        }
+        
+        tableBody.push(itemRow);
+        itemCount++;
+    });
 
     // Build the Top Cover Header (ONLY on page 1)
     const pageHeaderNodes = [];
@@ -762,7 +697,7 @@ async function exportPriceListPDF() {
     if (parsedData.address) {
         infoRows.push({ text: parsedData.address, style: 'companyDetails' });
     } else {
-        infoRows.push({ text: 'Sagarawat Electricals wholesale price listings.', style: 'companyDetails' });
+        infoRows.push({ text: '25-26, Dr. Bhabha Marg, Near Private Bus Stand\nNeemuch (M.P.) - 07423-220808', style: 'companyDetails' });
     }
 
     headerCols.push({
@@ -816,8 +751,8 @@ async function exportPriceListPDF() {
             },
             paddingLeft: function(i, node) { return 6; },
             paddingRight: function(i, node) { return 6; },
-            paddingTop: function(i, node) { return 5; },
-            paddingBottom: function(i, node) { return 5; }
+            paddingTop: function(i, node) { return 7; },
+            paddingBottom: function(i, node) { return 7; }
         }
     };
 
@@ -845,7 +780,7 @@ async function exportPriceListPDF() {
                     {
                         type: 'line',
                         x1: pageMargins[0], y1: 22,
-                        x2: pageSize.width - pageMargins[2], y2: 22,
+                        x2: 595 - pageMargins[2], y2: 22,
                         lineWidth: 0.5,
                         lineColor: '#cbd5e1'
                     }
@@ -874,7 +809,6 @@ async function exportPriceListPDF() {
 
         styles: {
             companyName: {
-                font: 'Roboto',
                 fontSize: 16,
                 bold: true,
                 color: config.themeColor
@@ -927,22 +861,77 @@ async function exportPriceListPDF() {
             }
         },
         defaultStyle: {
-            font: 'Roboto'
+            font: 'Roboto',
+            lineHeight: 1.15
         }
     };
 
-    updateProgressModal('Compiling output file', 95);
-    await delay(100);
-
     try {
         const filename = `${parsedData.companyName.replace(/[^a-z0-9]/gi, '_')}_PriceList.pdf`;
-        pdfMake.createPdf(docDefinition).download(filename, () => {
-            hideProgressModal();
-            showToast('Price list generated and downloaded!', 'success');
-        });
+        pdfMake.createPdf(docDefinition).download(filename);
     } catch(err) {
         console.error('Pdf creation failed:', err);
-        hideProgressModal();
         showToast('PDF compilation failed. See developer console.', 'danger');
     }
 }
+
+// Storage Safe Helpers
+function getStorageItem(key, defaultValue) {
+    try {
+        return localStorage.getItem(key) || defaultValue;
+    } catch (e) {
+        return defaultValue;
+    }
+}
+
+function setStorageItem(key, value) {
+    try {
+        localStorage.setItem(key, value);
+    } catch (e) {
+        // Safe fail
+    }
+}
+
+// -------------------------------------------------------------
+// Light/Dark Theme management
+// -------------------------------------------------------------
+function initTheme() {
+    const savedTheme = getStorageItem('app-theme', 'light');
+    const body = document.body;
+    const toggleIcon = document.getElementById('theme-toggle-icon');
+
+    if (savedTheme === 'dark') {
+        body.classList.add('dark-theme');
+        if (toggleIcon) {
+            toggleIcon.setAttribute('data-lucide', 'sun');
+        }
+    } else {
+        body.classList.remove('dark-theme');
+        if (toggleIcon) {
+            toggleIcon.setAttribute('data-lucide', 'moon');
+        }
+    }
+    initLucideIcons();
+}
+
+function toggleTheme() {
+    const body = document.body;
+    const toggleIcon = document.getElementById('theme-toggle-icon');
+    
+    if (body.classList.contains('dark-theme')) {
+        body.classList.remove('dark-theme');
+        setStorageItem('app-theme', 'light');
+        if (toggleIcon) {
+            toggleIcon.setAttribute('data-lucide', 'moon');
+        }
+    } else {
+        body.classList.add('dark-theme');
+        setStorageItem('app-theme', 'dark');
+        if (toggleIcon) {
+            toggleIcon.setAttribute('data-lucide', 'sun');
+        }
+    }
+    initLucideIcons();
+}
+
+
