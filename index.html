@@ -124,6 +124,21 @@
 
             <!-- Dashboard / Main Section -->
             <div class="workspace-area">
+                <!-- Error Alert Block (Hidden initially) -->
+                <div id="error-alert-container" class="error-alert-container hidden">
+                    <div class="error-alert-card">
+                        <div class="error-alert-icon">
+                            <i data-lucide="alert-triangle"></i>
+                        </div>
+                        <div class="error-alert-text">
+                            <strong>Format Unrecognized:</strong> Please upload a standard BUSY accounting export containing product names and rates.
+                        </div>
+                        <button id="btn-clear-error" class="btn-clear-error" title="Dismiss error">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Dropzone Area -->
                 <div id="dropzone" class="dropzone">
                     <div class="dropzone-content">

@@ -220,6 +220,15 @@ function setupEventListeners() {
             renderTablePage();
         }
     });
+
+    // Dismiss error button
+    const clearErrorBtn = document.getElementById('btn-clear-error');
+    if (clearErrorBtn) {
+        clearErrorBtn.addEventListener('click', () => {
+            const container = document.getElementById('error-alert-container');
+            if (container) container.classList.add('hidden');
+        });
+    }
 }
 
 // Convert Hex colors to RGB numbers for CSS transitions
@@ -342,6 +351,12 @@ function parseCSVText(csvText) {
 
 // Process rows to construct a structured Data model
 function processDataModel(rows) {
+    // Hide error banner initially
+    const errorContainer = document.getElementById('error-alert-container');
+    if (errorContainer) {
+        errorContainer.classList.add('hidden');
+    }
+
     // 1. Clean completely blank values
     const cleanRows = rows.filter(row => row.some(cell => cell && cell.toString().trim() !== ""));
     if (cleanRows.length === 0) {
@@ -373,6 +388,27 @@ function processDataModel(rows) {
     }
 
     const headerRow = cleanRows[headerRowIndex];
+
+    // Check for minimum required headers: 'Name' and 'Price'
+    const hasNameHeader = headerRow.some(cell => cell && cell.toString().trim().toLowerCase() === "name");
+    const hasPriceHeader = headerRow.some(cell => cell && cell.toString().trim().toLowerCase() === "price");
+
+    if (!hasNameHeader || !hasPriceHeader) {
+        // Halt execution and surface a clean, styled, user-friendly error UI message block
+        if (errorContainer) {
+            errorContainer.classList.remove('hidden');
+        }
+        // Hide preview-panel & disable generate PDF button, show dropzone
+        document.getElementById('dropzone').classList.remove('hidden');
+        document.getElementById('preview-panel').classList.add('hidden');
+        const generatePdfBtn = document.getElementById('btn-generate-pdf');
+        generatePdfBtn.classList.add('disabled');
+        generatePdfBtn.disabled = true;
+
+        rawCSVData = null;
+        parsedData = null;
+        return;
+    }
     
     // Map columns
     let colIndices = { name: -1, group: -1, unit: -1, price: -1, disc: -1, nett: -1 };
@@ -667,9 +703,71 @@ function exportPriceListPDF() {
     };
 
     // Margins logic mapping (compact, normal, wide)
-    let pageMargins = [30, 50, 30, 50]; // default normal
-    if (config.margins === 'compact') pageMargins = [20, 35, 20, 45];
-    if (config.margins === 'wide') pageMargins = [45, 60, 45, 60];
+    let pageMargins = [30, 50, 30, 20]; // default normal
+    if (config.margins === 'compact') pageMargins = [20, 35, 20, 15];
+    if (config.margins === 'wide') pageMargins = [45, 60, 45, 25];
+
+    // Gather categories for manual TOC
+    const uniqueCategories = [];
+    itemsToExport.forEach(item => {
+        if (config.groupByCategory && !uniqueCategories.includes(item.group)) {
+            uniqueCategories.push(item.group);
+        }
+    });
+
+    let tocTableObj = null;
+    if (config.showToc && config.groupByCategory) {
+        const tocTableBody = [];
+        // Header Row for TOC Table
+        tocTableBody.push([
+            { text: 'Brand / Category Name', style: 'tocTableHeader', alignment: 'left' },
+            { text: 'Page No.', style: 'tocTableHeader', alignment: 'right' }
+        ]);
+
+        uniqueCategories.forEach((cat, idx) => {
+            const isEven = (idx % 2 === 0);
+            const rowBg = isEven ? '#f8fafc' : '#ffffff';
+            
+            tocTableBody.push([
+                { 
+                    text: cat.toUpperCase(), 
+                    style: 'tocTableItem', 
+                    alignment: 'left',
+                    fillColor: rowBg
+                },
+                { 
+                    text: '', 
+                    pageReference: `cat_group_${cat.replace(/[^a-z0-9]/gi, '_')}`, 
+                    style: 'tocTablePage', 
+                    alignment: 'right',
+                    fillColor: rowBg
+                }
+            ]);
+        });
+
+        tocTableObj = {
+            table: {
+                headerRows: 1,
+                widths: ['*', 60],
+                body: tocTableBody,
+                dontBreakRows: true
+            },
+            layout: {
+                hLineWidth: function (i, node) { 
+                    return (i === 0 || i === node.table.body.length || i === 1) ? 1 : 0.5; 
+                },
+                vLineWidth: function (i, node) { return 0; },
+                hLineColor: function (i, node) { 
+                    return (i === 0 || i === node.table.body.length || i === 1) ? config.themeColor : '#e2e8f0'; 
+                },
+                paddingLeft: function(i, node) { return 10; },
+                paddingRight: function(i, node) { return 10; },
+                paddingTop: function(i, node) { return 6; },
+                paddingBottom: function(i, node) { return 6; }
+            },
+            margin: [0, 10, 0, 0]
+        };
+    }
 
     // Table Column Widths definition
     // Columns: Name, Unit, Price, [Disc, Nett]
@@ -713,11 +811,11 @@ function exportPriceListPDF() {
             
             // colSpan cell
             catSpanRow.push({ 
+                id: `cat_group_${item.group.replace(/[^a-z0-9]/gi, '_')}`,
                 text: item.group.toUpperCase(), 
                 colSpan: spanColumns, 
                 style: 'categorySpanHeader',
-                fillColor: config.themeLight,
-                tocItem: true // Add to Table of Contents
+                fillColor: config.themeLight
             });
             
             // Empty cells required to satisfy colspan size in pdfmake
@@ -849,8 +947,9 @@ function exportPriceListPDF() {
         
         content: [
             ...pageHeaderNodes,
-            ...(config.showToc && config.groupByCategory ? [
-                { toc: { title: { text: 'INDEX / TABLE OF CONTENTS', style: 'tocHeader' } } },
+            ...(config.showToc && config.groupByCategory && tocTableObj ? [
+                { text: 'INDEX / TABLE OF CONTENTS', style: 'tocHeader', alignment: 'center' },
+                tocTableObj,
                 { text: '', pageBreak: 'after' }
             ] : []),
             pdfTableObj
@@ -863,7 +962,7 @@ function exportPriceListPDF() {
                 margin: [pageMargins[0], 15, pageMargins[2], 0],
                 columns: [
                     { text: parsedData.companyName, style: 'miniHeader', alignment: 'left' },
-                    { text: parsedData.documentTitle, style: 'miniHeader', alignment: 'right' }
+                    { text: `Page ${currentPage} of ${pageCount}`, style: 'miniHeader', alignment: 'right' }
                 ],
                 canvas: [
                     {
@@ -879,21 +978,7 @@ function exportPriceListPDF() {
 
         // Dynamic footer showing Page numbers of PDF pages
         footer: function(currentPage, pageCount) {
-            return {
-                margin: [pageMargins[0], 10, pageMargins[2], 0],
-                columns: [
-                    { 
-                        text: 'Wholesale Rates Sheet. Subject to change without notice.', 
-                        style: 'footerText', 
-                        alignment: 'left' 
-                    },
-                    { 
-                        text: `Page ${currentPage} of ${pageCount}`, 
-                        style: 'footerText', 
-                        alignment: 'right' 
-                    }
-                ]
-            };
+            return null;
         },
 
         styles: {
@@ -902,18 +987,26 @@ function exportPriceListPDF() {
                 fontSize: 16,
                 bold: true,
                 color: config.themeColor,
-                margin: [0, 10, 0, 15]
+                margin: [0, 10, 0, 15],
+                alignment: 'center'
             },
-            tocItem: {
+            tocTableHeader: {
                 font: 'SpaceGrotesk',
-                fontSize: 10,
+                fontSize: 9.5,
                 bold: true,
-                color: '#0f172a',
-                margin: [0, 4, 0, 4]
+                color: '#ffffff',
+                fillColor: config.themeColor,
+                margin: [0, 2, 0, 2]
             },
-            tocPage: {
+            tocTableItem: {
                 font: 'SpaceGrotesk',
-                fontSize: 10,
+                fontSize: 9.5,
+                bold: true,
+                color: '#0f172a'
+            },
+            tocTablePage: {
+                font: 'SpaceGrotesk',
+                fontSize: 9.5,
                 bold: true,
                 color: config.themeColor
             },
@@ -982,7 +1075,18 @@ function exportPriceListPDF() {
     };
 
     try {
-        const filename = `${parsedData.companyName.replace(/[^a-z0-9]/gi, '_')}_PriceList.pdf`;
+        const baseName = `${parsedData.companyName.replace(/[^a-z0-9]/gi, '_')}_PriceList`;
+        const date = new Date();
+        const day = date.getDate();
+        const months = [
+            "january", "february", "march", "april", "may", "june",
+            "july", "august", "september", "october", "november", "december"
+        ];
+        const monthName = months[date.getMonth()];
+        const year = date.getFullYear();
+        const dateSuffix = `-${day}-${monthName}-${year}`;
+        const filename = `${baseName}${dateSuffix}.pdf`;
+        
         pdfMake.createPdf(docDefinition).download(filename);
     } catch(err) {
         console.error('Pdf creation failed:', err);
