@@ -698,7 +698,7 @@ function exportPriceListPDF() {
             image: config.logoBase64,
             width: 80,
             alignment: 'left',
-            margin: [0, 0, 24, 0] // Spacing to prevent text sticking to the right of the logo image
+            margin: [0, 0, 0, 0] // Reset logo margin to prevent column bounds clipping
         });
     }
 
@@ -712,11 +712,12 @@ function exportPriceListPDF() {
         infoRows.push({ text: '25-26, Dr. Bhabha Marg, Near Private Bus Stand\nNeemuch (M.P.) - 07423-220808', style: 'companyDetails' });
     }
 
-    // Vertically align company name and description with the logo image
+    // Vertically align and separate company name/description with/from the logo image
+    const infoColMargin = config.logoBase64 ? [24, 8, 0, 0] : [0, 8, 0, 0];
     headerCols.push({
         stack: infoRows,
         width: '*',
-        margin: [0, 8, 0, 0] // Adds top margin to balance vertical empty space at the bottom
+        margin: infoColMargin
     });
 
     headerCols.push({
