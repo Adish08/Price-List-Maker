@@ -26,6 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initLucideIcons();
     setupEventListeners();
+    loadDefaultLogo();
+    loadSpaceGroteskFonts();
 });
 
 // Helper for Lucide icons rendering
@@ -154,27 +156,35 @@ function setupEventListeners() {
     });
 
     // Logo Upload Logic
-    logoInput.addEventListener('change', (e) => {
-        if (e.target.files.length > 0) {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                config.logoBase64 = evt.target.result;
-                document.getElementById('logo-preview').src = evt.target.result;
-                document.getElementById('logo-preview-container').classList.remove('hidden');
-                showToast('Company logo loaded successfully!', 'success');
-            };
-            reader.readAsDataURL(file);
-        }
-    });
+    if (logoInput) {
+        logoInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    config.logoBase64 = evt.target.result;
+                    const preview = document.getElementById('logo-preview');
+                    if (preview) preview.src = evt.target.result;
+                    const previewContainer = document.getElementById('logo-preview-container');
+                    if (previewContainer) previewContainer.classList.remove('hidden');
+                    showToast('Company logo loaded successfully!', 'success');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 
-    removeLogoBtn.addEventListener('click', () => {
-        config.logoBase64 = null;
-        logoInput.value = '';
-        document.getElementById('logo-preview').src = '';
-        document.getElementById('logo-preview-container').classList.add('hidden');
-        showToast('Company logo removed.', 'info');
-    });
+    if (removeLogoBtn) {
+        removeLogoBtn.addEventListener('click', () => {
+            config.logoBase64 = null;
+            if (logoInput) logoInput.value = '';
+            const preview = document.getElementById('logo-preview');
+            if (preview) preview.src = '';
+            const previewContainer = document.getElementById('logo-preview-container');
+            if (previewContainer) previewContainer.classList.add('hidden');
+            showToast('Company logo removed.', 'info');
+        });
+    }
 
     // Pagination Click Events
     document.getElementById('btn-prev-page').addEventListener('click', () => {
@@ -271,9 +281,9 @@ function processDataModel(rows) {
         return;
     }
 
-    let companyName = "Sagarawat Electricals";
-    let documentTitle = "Wholesale Price List";
-    let address = "";
+    const companyName = "Sagarawat Electricals";
+    const documentTitle = "Price List";
+    const address = "25-26, Dr. Bhabha Marg, Near Private Bus Stand\nNeemuch (M.P.) - 07423-220808";
     let headerRowIndex = -1;
 
     // Detect header index (looks for fields: 'Name' and either 'Price' or 'Nett')
@@ -287,18 +297,6 @@ function processDataModel(rows) {
             headerRowIndex = i;
             break;
         }
-    }
-
-    // Default metadata extraction from first 2 rows if available
-    if (headerRowIndex > 0) {
-        const firstRow = cleanRows[0];
-        const firstVal = firstRow.find(cell => cell && cell.toString().trim() !== "");
-        if (firstVal) companyName = firstVal.toString().trim();
-    }
-    if (headerRowIndex > 1) {
-        const secondRow = cleanRows[1];
-        const secondVal = secondRow.find(cell => cell && cell.toString().trim() !== "");
-        if (secondVal) documentTitle = secondVal.toString().trim();
     }
     
     // Set fallback if header indexing fails
@@ -586,6 +584,20 @@ function exportPriceListPDF() {
         return;
     }
 
+    // Configure Space Grotesk and Roboto fonts in pdfMake
+    pdfMake.fonts = {
+        Roboto: {
+            normal: 'Roboto-Regular.ttf',
+            bold: 'Roboto-Medium.ttf',
+            italics: 'Roboto-Italic.ttf',
+            bolditalics: 'Roboto-MediumItalic.ttf'
+        },
+        SpaceGrotesk: {
+            normal: 'SpaceGrotesk-Regular.ttf',
+            bold: 'SpaceGrotesk-Bold.ttf'
+        }
+    };
+
     // Margins logic mapping (compact, normal, wide)
     let pageMargins = [30, 50, 30, 50]; // default normal
     if (config.margins === 'compact') pageMargins = [20, 35, 20, 45];
@@ -686,7 +698,7 @@ function exportPriceListPDF() {
             image: config.logoBase64,
             width: 80,
             alignment: 'left',
-            margin: [0, 0, 15, 0]
+            margin: [0, 0, 24, 0] // Spacing to prevent text sticking to the right of the logo image
         });
     }
 
@@ -700,9 +712,11 @@ function exportPriceListPDF() {
         infoRows.push({ text: '25-26, Dr. Bhabha Marg, Near Private Bus Stand\nNeemuch (M.P.) - 07423-220808', style: 'companyDetails' });
     }
 
+    // Vertically align company name and description with the logo image
     headerCols.push({
         stack: infoRows,
-        width: '*'
+        width: '*',
+        margin: [0, 8, 0, 0] // Adds top margin to balance vertical empty space at the bottom
     });
 
     headerCols.push({
@@ -711,7 +725,8 @@ function exportPriceListPDF() {
             { text: `DATE: ${new Date().toLocaleDateString('en-GB')}`, style: 'dateStamp', alignment: 'right' },
             { text: `TOTAL ITEMS: ${itemsToExport.length}`, style: 'dateStamp', alignment: 'right' }
         ],
-        width: 'auto'
+        width: 'auto',
+        margin: [0, 12, 0, 0] // Adds top margin to vertically align the right block
     });
 
     pageHeaderNodes.push({
@@ -809,24 +824,29 @@ function exportPriceListPDF() {
 
         styles: {
             companyName: {
-                fontSize: 16,
+                font: 'SpaceGrotesk',
+                fontSize: 22, // Scaled font size
                 bold: true,
                 color: config.themeColor
             },
             companyDetails: {
-                fontSize: 8,
+                font: 'SpaceGrotesk',
+                fontSize: 9, // Scaled font size
                 color: '#475569',
-                margin: [0, 4, 0, 0]
+                margin: [0, 6, 0, 0], // Spaced out top margin
+                lineHeight: 1.25 // More line spacing
             },
             documentTitle: {
-                fontSize: 14,
+                font: 'SpaceGrotesk',
+                fontSize: 16, // Scaled font size
                 bold: true,
                 color: config.themeColor
             },
             dateStamp: {
-                fontSize: 8,
+                font: 'SpaceGrotesk',
+                fontSize: 8.5,
                 color: '#64748b',
-                margin: [0, 2, 0, 0]
+                margin: [0, 3, 0, 0]
             },
             tableHeader: {
                 fontSize: 9,
@@ -852,7 +872,8 @@ function exportPriceListPDF() {
                 bold: true
             },
             miniHeader: {
-                fontSize: 7.5,
+                font: 'SpaceGrotesk',
+                fontSize: 8,
                 color: '#94a3b8'
             },
             footerText: {
@@ -932,6 +953,57 @@ function toggleTheme() {
         }
     }
     initLucideIcons();
+}
+
+// Auto-load default logo from SELogo.jpg
+async function loadDefaultLogo() {
+    try {
+        const response = await fetch('./SELogo.jpg');
+        if (!response.ok) {
+            throw new Error(`Failed to fetch logo image: ${response.status} ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        const reader = new FileReader();
+        return new Promise((resolve) => {
+            reader.onloadend = () => {
+                config.logoBase64 = reader.result;
+                resolve(reader.result);
+            };
+            reader.readAsDataURL(blob);
+        });
+    } catch (e) {
+        console.warn('Could not auto-load SELogo.jpg default logo:', e);
+    }
+}
+
+// Dynamic pre-load Space Grotesk fonts directly into pdfMake's virtual file system (vfs)
+async function loadSpaceGroteskFonts() {
+    try {
+        const fetchFont = async (fileName) => {
+            const response = await fetch(`./${fileName}`);
+            if (!response.ok) throw new Error(`Failed to load font file: ${fileName}`);
+            const blob = await response.blob();
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.readAsDataURL(blob);
+            });
+        };
+
+        const regBase64 = await fetchFont('SpaceGrotesk-Regular.ttf');
+        const boldBase64 = await fetchFont('SpaceGrotesk-Bold.ttf');
+
+        if (window.pdfMake) {
+            if (!window.pdfMake.vfs) window.pdfMake.vfs = {};
+            window.pdfMake.vfs['SpaceGrotesk-Regular.ttf'] = regBase64;
+            window.pdfMake.vfs['SpaceGrotesk-Bold.ttf'] = boldBase64;
+        }
+    } catch (e) {
+        console.warn('Could not pre-load Space Grotesk fonts:', e);
+    }
 }
 
 
