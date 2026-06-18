@@ -7,12 +7,12 @@ const config = {
     themeColor: '#ff6600',      // Primary theme color (Vibrant Orange)
     themeLight: '#fff5eb',      // Accent category row background (Soft Orange Tint)
     currency: '₹',             // Default currency symbol
-    groupByCategory: false,    // Default grouping by parent group (OFF by default)
+    groupByCategory: true,     // Default grouping by parent group (ON by default)
     altRows: true,             // Shaded row background
     margins: 'compact',        // Page margins spacing
     showDiscount: true,        // Toggle discount columns
     logoBase64: null,          // Base64 encoded logo image
-    showToc: false             // Toggle Table of Contents (TOC)
+    showToc: true              // Toggle Table of Contents (TOC) (ON by default)
 };
 
 // Application State Data
@@ -689,18 +689,26 @@ function exportPriceListPDF() {
     }
 
     // Configure Space Grotesk and Roboto fonts in pdfMake
+    const hasSpaceGrotesk = window.pdfMake && window.pdfMake.vfs && 
+                            window.pdfMake.vfs['SpaceGrotesk-Regular.ttf'] && 
+                            window.pdfMake.vfs['SpaceGrotesk-Bold.ttf'];
+    const useFont = hasSpaceGrotesk ? 'SpaceGrotesk' : 'Roboto';
+
     pdfMake.fonts = {
         Roboto: {
             normal: 'Roboto-Regular.ttf',
             bold: 'Roboto-Medium.ttf',
             italics: 'Roboto-Italic.ttf',
             bolditalics: 'Roboto-MediumItalic.ttf'
-        },
-        SpaceGrotesk: {
-            normal: 'SpaceGrotesk-Regular.ttf',
-            bold: 'SpaceGrotesk-Bold.ttf'
         }
     };
+
+    if (hasSpaceGrotesk) {
+        pdfMake.fonts.SpaceGrotesk = {
+            normal: 'SpaceGrotesk-Regular.ttf',
+            bold: 'SpaceGrotesk-Bold.ttf'
+        };
+    }
 
     // Margins logic mapping (compact, normal, wide)
     let pageMargins = [30, 50, 30, 20]; // default normal
@@ -983,7 +991,7 @@ function exportPriceListPDF() {
 
         styles: {
             tocHeader: {
-                font: 'SpaceGrotesk',
+                font: useFont,
                 fontSize: 16,
                 bold: true,
                 color: config.themeColor,
@@ -991,7 +999,7 @@ function exportPriceListPDF() {
                 alignment: 'center'
             },
             tocTableHeader: {
-                font: 'SpaceGrotesk',
+                font: useFont,
                 fontSize: 9.5,
                 bold: true,
                 color: '#ffffff',
@@ -999,38 +1007,38 @@ function exportPriceListPDF() {
                 margin: [0, 2, 0, 2]
             },
             tocTableItem: {
-                font: 'SpaceGrotesk',
+                font: useFont,
                 fontSize: 9.5,
                 bold: true,
                 color: '#0f172a'
             },
             tocTablePage: {
-                font: 'SpaceGrotesk',
+                font: useFont,
                 fontSize: 9.5,
                 bold: true,
                 color: config.themeColor
             },
             companyName: {
-                font: 'SpaceGrotesk',
+                font: useFont,
                 fontSize: 22, // Scaled font size
                 bold: true,
                 color: config.themeColor
             },
             companyDetails: {
-                font: 'SpaceGrotesk',
+                font: useFont,
                 fontSize: 9, // Scaled font size
                 color: '#475569',
                 margin: [0, 6, 0, 0], // Spaced out top margin
                 lineHeight: 1.25 // More line spacing
             },
             documentTitle: {
-                font: 'SpaceGrotesk',
+                font: useFont,
                 fontSize: 16, // Scaled font size
                 bold: true,
                 color: config.themeColor
             },
             dateStamp: {
-                font: 'SpaceGrotesk',
+                font: useFont,
                 fontSize: 8.5,
                 color: '#64748b',
                 margin: [0, 3, 0, 0]
@@ -1059,7 +1067,7 @@ function exportPriceListPDF() {
                 bold: true
             },
             miniHeader: {
-                font: 'SpaceGrotesk',
+                font: useFont,
                 fontSize: 8,
                 color: '#94a3b8'
             },
