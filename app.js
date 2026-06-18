@@ -11,7 +11,8 @@ const config = {
     altRows: true,             // Shaded row background
     margins: 'compact',        // Page margins spacing
     showDiscount: true,        // Toggle discount columns
-    logoBase64: null           // Base64 encoded logo image
+    logoBase64: null,          // Base64 encoded logo image
+    showToc: false             // Toggle Table of Contents (TOC)
 };
 
 // Application State Data
@@ -105,10 +106,28 @@ function setupEventListeners() {
 
     // Currency selector is hidden input and defaults to Rupees (₹)
 
+    const showTocToggle = document.getElementById('show-toc');
+
     groupByCategoryToggle.addEventListener('change', (e) => {
         config.groupByCategory = e.target.checked;
+        if (showTocToggle) {
+            showTocToggle.disabled = !e.target.checked;
+            if (!e.target.checked) {
+                showTocToggle.checked = false;
+                config.showToc = false;
+            } else {
+                showTocToggle.checked = true;
+                config.showToc = true;
+            }
+        }
         if (parsedData) updateDataView();
     });
+
+    if (showTocToggle) {
+        showTocToggle.addEventListener('change', (e) => {
+            config.showToc = e.target.checked;
+        });
+    }
 
     altRowsToggle.addEventListener('change', (e) => {
         config.altRows = e.target.checked;
@@ -314,7 +333,6 @@ function parseCSVText(csvText) {
         
         rawCSVData = data;
         processDataModel(data);
-        showToast('Parsed CSV file successfully!', 'success');
         
     } catch (err) {
         console.error('Csv parse error:', err);
@@ -698,7 +716,8 @@ function exportPriceListPDF() {
                 text: item.group.toUpperCase(), 
                 colSpan: spanColumns, 
                 style: 'categorySpanHeader',
-                fillColor: config.themeLight
+                fillColor: config.themeLight,
+                tocItem: true // Add to Table of Contents
             });
             
             // Empty cells required to satisfy colspan size in pdfmake
@@ -817,8 +836,8 @@ function exportPriceListPDF() {
             },
             paddingLeft: function(i, node) { return 6; },
             paddingRight: function(i, node) { return 6; },
-            paddingTop: function(i, node) { return 7; },
-            paddingBottom: function(i, node) { return 7; }
+            paddingTop: function(i, node) { return 4; },
+            paddingBottom: function(i, node) { return 4; }
         }
     };
 
@@ -830,6 +849,10 @@ function exportPriceListPDF() {
         
         content: [
             ...pageHeaderNodes,
+            ...(config.showToc && config.groupByCategory ? [
+                { toc: { title: { text: 'INDEX / TABLE OF CONTENTS', style: 'tocHeader' } } },
+                { text: '', pageBreak: 'after' }
+            ] : []),
             pdfTableObj
         ],
 
@@ -874,6 +897,26 @@ function exportPriceListPDF() {
         },
 
         styles: {
+            tocHeader: {
+                font: 'SpaceGrotesk',
+                fontSize: 16,
+                bold: true,
+                color: config.themeColor,
+                margin: [0, 10, 0, 15]
+            },
+            tocItem: {
+                font: 'SpaceGrotesk',
+                fontSize: 10,
+                bold: true,
+                color: '#0f172a',
+                margin: [0, 4, 0, 4]
+            },
+            tocPage: {
+                font: 'SpaceGrotesk',
+                fontSize: 10,
+                bold: true,
+                color: config.themeColor
+            },
             companyName: {
                 font: 'SpaceGrotesk',
                 fontSize: 22, // Scaled font size
