@@ -1,0 +1,13 @@
+{
+  "name": "price-list-maker",
+  "version": "1.0.0",
+  "description": "Sagarawat Price-List Maker",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.2.0"
+  }
+}
